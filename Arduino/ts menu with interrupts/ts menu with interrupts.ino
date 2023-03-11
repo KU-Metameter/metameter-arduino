@@ -10,16 +10,17 @@
 #define TFT_DC  9
 #define TFT_CS 10
 #define TS_IRQ 12
+#define BUTTON 4
+#define LED_EXT 13
 
-//XPT2046_Touchscreen ts(TS_CS);
-XPT2046_Touchscreen ts(TS_CS, TS_IRQ);
+XPT2046_Touchscreen ts(TS_CS);
+//XPT2046_Touchscreen ts(TS_CS, TS_IRQ);
 Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
 
 const int v_off = 240;
 const int h_off = 80;
 
 void printMenu(){
-  
   tft.fillRect(h_off*0, v_off, h_off, h_off, ILI9341_BLUE);
   tft.fillRect(h_off*1, v_off, h_off, h_off, ILI9341_RED);  
   tft.fillRect(h_off*2, v_off, h_off, h_off, ILI9341_YELLOW);  
@@ -63,6 +64,14 @@ int touchYtoTFTy(int touch_y){
   return((touch_y-y_min)*320/(y_max-y_min));
 }
 
+/*bool touchInBox(int x, int y, int w, int h){
+  TS_Point point = ts.getPoint();  
+  if(touchXtoTFTx(point.x) > x && touchXtoTFTx(point.x) < x + w && touchYtoTFTy(point.y) > y && touchYtoTFTy(point.y) < y + h){
+    return(true);
+  }
+  return(false);
+}*/
+
 bool touchInBox(int x, int y, int w, int h, TS_Point point){
   if(touchXtoTFTx(point.x) > x && touchXtoTFTx(point.x) < x + w && touchYtoTFTy(point.y) > y && touchYtoTFTy(point.y) < y + h){
     return(true);
@@ -70,60 +79,77 @@ bool touchInBox(int x, int y, int w, int h, TS_Point point){
   return(false);
 }
 
+int mode = 0;
+bool tsWasTouched = false;
 void interruptHandler() {
-  TS_Point p = ts.getPoint();
-  tft.fillRect(0, 0, 240, v_off-h_off, ILI9341_BLACK);
-  tft.setTextSize(2);
-  tft.setCursor(0,0);
-  tft.print("X = ");
-  tft.print(touchXtoTFTx(p.x));
-  tft.print("Y = ");
-  tft.print(touchYtoTFTy(p.y));
-
-  if(touchInBox(h_off*0, v_off, h_off, h_off, p)){
-    tft.setCursor(0,20);
-    tft.print("BT Mode");
+  if(ts.touched() && !tsWasTouched){
+    digitalWrite(LED_EXT, HIGH);
+    TS_Point point = ts.getPoint();
+    tft.fillRect(0, 0, 240, v_off-h_off, ILI9341_BLACK);
+    tft.setTextSize(2);
+    tft.setCursor(0,0);
+    tft.print("x = ");
+    tft.print(point.x);
+    tft.print("y = ");
+    tft.print(point.y);
+    
+    if(touchInBox(h_off*0, v_off, h_off, h_off, point)){
+      tft.setCursor(0,20);
+      tft.print("BT Mode");
+      mode = 1;
+    }
+    else if(touchInBox(h_off*1, v_off, h_off, h_off, point)){
+      tft.setCursor(0,20);
+      tft.print("Diode Mode");
+      mode = 2;
+    }
+    else if(touchInBox(h_off*2, v_off, h_off, h_off, point)){
+      tft.setCursor(0,20);
+      tft.print("Miliamp Mode");
+      mode = 3;
+    }
+    else if(touchInBox(h_off*0, v_off-h_off, h_off, h_off, point)){
+      tft.setCursor(0,20);
+      tft.print("Voltage Mode");
+      mode = 4;
+    }
+    else if(touchInBox(h_off*1, v_off-h_off, h_off, h_off, point)){
+      tft.setCursor(0,20);
+      tft.print("Ohm Mode");
+      mode = 5;
+    }
+    else if(touchInBox(h_off*2, v_off-h_off, h_off, h_off, point)){
+      tft.setCursor(0,20);
+      tft.print("Amp Mode");
+      mode = 6;
+    }
+    tsWasTouched = true;
   }
-  else if(touchInBox(h_off*1, v_off, h_off, h_off, p)){
-    tft.setCursor(0,20);
-    tft.print("Diode Mode");
+  else{
+    tsWasTouched = false;
   }
-  else if(touchInBox(h_off*2, v_off, h_off, h_off, p)){
-    tft.setCursor(0,20);
-    tft.print("Miliamp Mode");
-  }
-  else if(touchInBox(h_off*0, v_off-h_off, h_off, h_off, p)){
-    tft.setCursor(0,20);
-    tft.print("Voltage Mode");
-  }
-  else if(touchInBox(h_off*1, v_off-h_off, h_off, h_off, p)){
-    tft.setCursor(0,20);
-    tft.print("Ohm Mode");
-  }
-  else if(touchInBox(h_off*2, v_off-h_off, h_off, h_off, p)){
-    tft.setCursor(0,20);
-    tft.print("Amp Mode");
-  }
-  
-  return;
 }
 
 
 void setup() {
+  pinMode(TS_IRQ, INPUT_PULLUP);
+  pinMode(LED_EXT, OUTPUT);
+  attachInterrupt(digitalPinToInterrupt(TS_IRQ), interruptHandler, FALLING);  
+  
   tft.begin();
   tft.setRotation(2);
   tft.fillScreen(ILI9341_BLACK);
   ts.begin();
   ts.setRotation(0);
-
-  attachInterrupt(digitalPinToInterrupt(TS_IRQ), interruptHandler, FALLING);  
-
   printMenu();
   tft.setTextColor(ILI9341_WHITE);
-
 }
 
 
 void loop() {
-  while(1){}
+  delay(1000);
+  digitalWrite(LED_EXT, LOW);
+  tft.setCursor(0,40);
+  tft.print("Mode: ");
+  tft.print(mode);
 }
