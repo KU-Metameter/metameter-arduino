@@ -1,5 +1,4 @@
 (sym_lib_table
-  (lib (name "New_Library")(type "KiCad")(uri "${KIPRJMOD}/libs/New_Library.kicad_sym")(options "")(descr ""))
-  (lib (name "BTMM")(type "KiCad")(uri "${KIPRJMOD}/libs/BTMM.kicad_sym")(options "")(descr ""))
+  (version 7)
   (lib (name "502ProjectSymbols")(type "KiCad")(uri "${KIPRJMOD}/libs/502ProjectSymbols.kicad_sym")(options "")(descr ""))
 )
