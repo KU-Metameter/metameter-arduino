@@ -1,6 +1,6 @@
-(footprint "1776C68" (version 20221018) (generator pcbnew)
+(footprint "1776-C68-1" (version 20221018) (generator pcbnew)
   (layer "F.Cu")
-  (descr "1776-C68-1")
+  (descr "9M to 1k Precision Resistor Divider Network")
   (tags "Resistor Network")
   (attr through_hole)
   (fp_text reference "RN**" (at 3.81 -0.635) (layer "F.SilkS")

@@ -1,133 +1,112 @@
-21481733361242788
+21476694657844298
 502ProjectFootprints
+0.05 Ohm 5W Resistor rev2
+
+
+0
+2
+2
+502ProjectFootprints
+10A Fuse Oval rev2
+
+
+0
+4
+4
+502ProjectFootprints
+10Afuse
+
+
+0
+4
+4
+502ProjectFootprints
+10AfuseOval
+
+
+0
+4
+4
+502ProjectFootprints
+250mA Fuse rev2
+
+
+0
+4
+4
+502ProjectFootprints
+250mAFuse
+
+
+0
+4
+4
+502ProjectFootprints
+1776C68
 1776-C68-1
-9M to 1k Precision Resistor Divider Network
 Resistor Network
 0
 6
 6
 502ProjectFootprints
+ChonkyZistor
+
+
+0
+2
+2
+502ProjectFootprints
 ItsyBitsy
-Adafruit ItsyBitsy nRF52840 Express
+
 
 0
 28
 28
-502ProjectFootprints
-LF124041_1
-10 A Fuse Clips Empirical
-
-0
-4
-4
-502ProjectFootprints
-LF124041_2
-10 A Fuse Clips Empirical Oval Drill
-
-0
-4
-4
-502ProjectFootprints
-LF124041_3
-10 A Fuse Clips from Datasheet
-
-0
-4
-4
-502ProjectFootprints
-LF124061_1
-250 mA Fuse Clips Empirical
-
-0
-4
-4
-502ProjectFootprints
-LF124061_2
-250 mA Fuse Clips From Datasheet
-
-0
-4
-4
-502ProjectFootprints
-LOB-1528272_1
-0.05 Ohm 5W Precision Power Resistor Empirical
-
-0
-2
-2
-502ProjectFootprints
-LOB-1528272_2
-0.05 Ohm 5W Precision Power Resistor from Datasheet
-
-0
-2
-2
-502ProjectFootprints
-LOB-1528272_3
-0.05 Ohm 5W Precision Power Resistor Shortened Leads
-
-0
-2
-2
-502ProjectFootprints
-MountingHole_3mm
-Mounting Hole 3mm, no annular, 1.5mm clearance, for shop screws and standoffs
-mounting hole 3mm no annular
-0
-0
-0
 502ProjectFootprints
 PinHeader_1x01_P2.54mm_Vertical_H0.8mm
-Through hole straight pin header, 1x01, 2.54mm pitch, single row, 0.8mm drill
+Through hole straight pin header, 1x01, 2.54mm pitch, single row
 Through hole pin header THT 1x01 2.54mm single row
 0
 1
 1
 502ProjectFootprints
 PinHeader_1x02_P2.54mm_Vertical_H0.9mm
-Through hole straight pin header, 1x02, 2.54mm pitch, single row, 0.9mm drill
+Through hole straight pin header, 1x02, 2.54mm pitch, single row
 Through hole pin header THT 1x02 2.54mm single row
 0
 2
 2
 502ProjectFootprints
 PinHeader_1x14_P2.54mm_Vertical_H0.9mm
-Through hole straight pin header, 1x14, 2.54mm pitch, single row, 0.9mm drill
+Through hole straight pin header, 1x14, 2.54mm pitch, single row
 Through hole pin header THT 1x14 2.54mm single row
 0
 14
 14
 502ProjectFootprints
-SIL03-1A72-71_1
-3.3V Reed Relay Empirical
+SIL03-1A72-71D
+
 
 0
 4
 4
 502ProjectFootprints
-SIL03-1A72-71_2
-3.3V Reed Reay Downloaded
+SIL03-1A72-71DrevB
+
+
+0
+4
+4
+502ProjectFootprints
+SIL031A7271Ddownload
+SIL03-1A72-71D-1
 Relay or Contactor
 0
 4
 4
 502ProjectFootprints
-SIL03-1A72-71_3
-3.3V Reed Relay DEPRECIATED
-
-0
-4
-4
-502ProjectFootprints
-SIL03-1A72-71_4
-3.3V Reed Relay from Datasheet
-
-0
-4
-4
-502ProjectFootprints
 XDCR_PS1240P02BT
-Piezoelectric Speaker
+
 
 0
 2

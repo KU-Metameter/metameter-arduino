@@ -1,6 +1,6 @@
-(footprint "SIL031A7271Ddownload" (version 20221018) (generator pcbnew)
+(footprint "SIL03-1A72-71_2" (version 20221018) (generator pcbnew)
   (layer "F.Cu")
-  (descr "SIL03-1A72-71D-1")
+  (descr "3.3V Reed Reay Downloaded")
   (tags "Relay or Contactor")
   (attr through_hole)
   (fp_text reference "K**" (at 6.57 0) (layer "F.SilkS")
