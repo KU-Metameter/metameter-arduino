@@ -8,19 +8,18 @@
     "high_contrast_mode": 0,
     "net_color_mode": 1,
     "opacity": {
-      "images": 0.5299999713897705,
+      "images": 0.6,
       "pads": 1.0,
-      "tracks": 0.8899999856948853,
+      "tracks": 1.0,
       "vias": 1.0,
-      "zones": 0.4000000059604645
+      "zones": 0.6
     },
-    "ratsnest_display_mode": 0,
     "selection_filter": {
       "dimensions": true,
       "footprints": true,
       "graphics": true,
       "keepouts": true,
-      "lockedItems": true,
+      "lockedItems": false,
       "otherItems": true,
       "pads": true,
       "text": true,
@@ -38,9 +37,9 @@
       8,
       9,
       10,
+      11,
       12,
       13,
-      14,
       15,
       16,
       17,
@@ -60,13 +59,15 @@
       32,
       34,
       35,
-      36
+      36,
+      39,
+      40
     ],
-    "visible_layers": "7fdffff_80000001",
+    "visible_layers": "7ffffff_80000001",
     "zone_display_mode": 0
   },
   "meta": {
-    "filename": "Bluetooth Multimeter.kicad_prl",
+    "filename": "Bluetooth Multimeter rev2.kicad_prl",
     "version": 3
   },
   "project": {
