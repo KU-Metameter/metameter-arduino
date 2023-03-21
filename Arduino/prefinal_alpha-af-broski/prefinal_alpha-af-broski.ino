@@ -3,7 +3,7 @@
 #include <SPI.h>
 #include <Wire.h>
 
-//these are the pin assignments of the first revision of the multimeter schematic PRONE TO CHANGE 
+//these are the pin assignments of the first revision of the multimeter schematic PRONE TO CHANGE (probably not tho)
 #define BUTTON 4 //on board button, use as necessary
 #define V_ADC A0 //voltage and ohm adc positive input
 #define COM_ADC A1 //common (negative) adc input
@@ -20,7 +20,7 @@
 #define M_CTL 12 //control pin for Medium range (90k)
 #define L_CTL 13 //control pin for Low range (900k) (!!Exposes ADC to raw V/ohm In!!) 
 
-//XPT2046_Touchscreen ts(TS_CS);
+//XPT2046_Touchscreen ts(TS_CS); //declaration for non interrupting touch screen object (I think its an object)
 XPT2046_Touchscreen ts(TS_CS, TS_IRQ);
 Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
 
@@ -67,7 +67,7 @@ void simpPrint3(char* toPrint, float toPrint2, float toPrint3){
   tft.print(toPrint3);
 }
 
-//manually calibrated touch screen edges, not 100% accurate
+//manually calibrated touch screen edges, not 100% accurate 
 const int x_min = 280;
 const int x_max = 3893;
 const int y_min = 370;
@@ -99,7 +99,7 @@ bool touchInBoxPoint(int x, int y, int w, int h, TS_Point point){
 
 
 const float adc2v = 3.3/3745; // manually calibrated, only works for 12 bit //used for all data input functions //different for each itsybitsy?
-const int lowRangeRes = 900000; // values also used for ohmmeter 
+const int lowRangeRes = 900000; // values also used for ohmmeter //holy shit $15 buys a good resistor network
 const int medRangeRes = 90000;
 const int highRangeRes = 9000;
 const int uhRangeRes = 1000;
