@@ -211,7 +211,7 @@ const int miliampRes = 5;
 void miliampMeter(){
   int read = 0;
   read = analogRead(A_ADC) - (analogRead(COM_ADC));
-  simpPrint3("10A Range", read*adc2v/miliampRes, read);  //ohms law, bitch part 2
+  simpPrint3("200mA Range", read*adc2v/miliampRes, read);  //ohms law, bitch part 2
 }
 
 void setup() {
