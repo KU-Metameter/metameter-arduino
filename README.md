@@ -1,2 +1,2 @@
-Bluetooth Multimeter Senior Design Project
-Contains KiCad and Arduino files
+Bluetooth Multimeter Senior Design Project  
+Contains Arduino files
