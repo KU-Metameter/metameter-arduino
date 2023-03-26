@@ -2,6 +2,7 @@
 #include <XPT2046_Touchscreen.h>
 #include <SPI.h>
 #include <Wire.h>
+#include "nRF52_PWM.h"
 
 //these are the pin assignments of the first revision of the multimeter schematic PRONE TO CHANGE (probably not tho)
 #define BUTTON 4 //on board button, use as necessary
@@ -20,6 +21,14 @@
 #define M_CTL 12 //control pin for Medium range (90k)
 #define L_CTL 13 //control pin for Low range (900k) (!!Exposes ADC to raw V/ohm In!!) 
 #define SPK A5 //speaker control pin (must be driven by ~4khz pwm signal)
+
+//for speaker PWM output
+#define _PWM_LOGLEVEL_       4
+#define USING_TIMER       false
+nRF52_PWM* PWM_Instance;
+float frequencyOn = 4000.0f;
+float frequencyOff = 0.0f;
+float dutyCycle = 50.0f;  
 
 //XPT2046_Touchscreen ts(TS_CS); //declaration for non interrupting touch screen object (I think its an object)
 XPT2046_Touchscreen ts(TS_CS, TS_IRQ);
@@ -149,7 +158,7 @@ void voltMeter(){
 void ohmMeter(){
   int read = 0;
   digitalWrite(L_CTL, HIGH); // connect v/ohm in to adc for all of ohmeter reading
-  digitalWrite(V_OHM_CTL, LOW); //disconnect bot of r ladder from in common
+  digitalWrite(V_OHM_CTL, LOW); //disconnect bottom of r ladder from in common
   digitalWrite(OHM_OUT, HIGH); //ohm v source
   digitalWrite(M_CTL, LOW); //setting defaults for robustness
   digitalWrite(H_CTL, LOW);
@@ -244,19 +253,24 @@ void setup() {
   ts.setRotation(0);
   printMenu();
   tft.setTextColor(ILI9341_WHITE);
+  PWM_Instance = new nRF52_PWM(SPK, frequencyOff, dutyCycle);
 }
 
 
 int curTime = 0;
 int lastTime = 0;
-int mode = 0;  //
+int mode = 0;  //current mode
 void loop() {  //utilizing zoomy loops to avoid using interrupts (double triggering, never felt responsive enough) keep everything in the main loop fast (or you die)
   curTime = millis();
   if(curTime >= lastTime + 500){  //run this section of the loop every half second 
     if(mode == 1){
-      //BTmenu(); //ANDREW DO YOUR F***ING JOB >:( (i love you)
+
+      PWM_Instance->setPWM(SPK, frequencyOff, dutyCycle);
+      //BTmenu(); //TODO Yell at andrew (nicely)
     }
     else if(mode == 2){
+      //testing speaker
+      PWM_Instance->setPWM(SPK, frequencyOn, dutyCycle);
       //diodeMeter(); //TODO How the fuck do diodes work
     }
     else if(mode == 3){
@@ -278,7 +292,7 @@ void loop() {  //utilizing zoomy loops to avoid using interrupts (double trigger
   }
 
   if (ts.tirqTouched()) { //check for touch, probably needs to be run rapidly to feel responsive  //TODO: Check how long it takes to run
-    if (ts.touched()) {  //not sure if this nest is necessary (nestecarry ehehuhehuhe)
+    //if (ts.touched()) {  //not sure if this nest is necessary (nestecarry ehehuhehuhe)
       TS_Point point = ts.getPoint();
       
       if(touchInBoxPoint(h_off*0, v_off, h_off, h_off, point)){
@@ -299,7 +313,7 @@ void loop() {  //utilizing zoomy loops to avoid using interrupts (double trigger
       else if(touchInBoxPoint(h_off*2, v_off-h_off, h_off, h_off, point)){
         mode = 6;
       }
-    }
+    //}
   }
   
 }
