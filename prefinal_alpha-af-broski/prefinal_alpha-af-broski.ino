@@ -19,6 +19,7 @@
 #define H_CTL 11 //control pin for High range (9k)
 #define M_CTL 12 //control pin for Medium range (90k)
 #define L_CTL 13 //control pin for Low range (900k) (!!Exposes ADC to raw V/ohm In!!) 
+#define SPK A5 //speaker control pin (must be driven by ~4khz pwm signal)
 
 //XPT2046_Touchscreen ts(TS_CS); //declaration for non interrupting touch screen object (I think its an object)
 XPT2046_Touchscreen ts(TS_CS, TS_IRQ);
@@ -169,7 +170,7 @@ void ohmMeter(){
         //digitalWrite(, LOW);
         digitalWrite(UH_CTL, HIGH); //bypass 9k
         delay(2);
-        read =  analogRead(V_ADC) - (analogRead(COM_ADC)); //read with 1k //TODO take into account relay resistance (~10 ohms)
+        read =  analogRead(V_ADC) - (analogRead(COM_ADC)); //read with 1k //TODO take into account relay resistance (~10 ohms each)
         simpPrint3("1k range",((1/((3.3/(read*adc2v))-1))*(uhRangeRes)), read);
         //digitalWrite(UH_CTL, LOW);
         //delay(2); //relay switch
@@ -210,8 +211,8 @@ void ampMeter(){
 const int miliampRes = 5;
 void miliampMeter(){
   int read = 0;
-  read = analogRead(A_ADC) - (analogRead(COM_ADC));
-  simpPrint3("200mA Range", read*adc2v/miliampRes, read);  //ohms law, bitch part 2
+  read = analogRead(mA_ADC) - (analogRead(COM_ADC));
+  simpPrint3("200mA Range", read*adc2v/miliampRes*1000, read);  //ohms law, bitch part 2
 }
 
 void setup() {
