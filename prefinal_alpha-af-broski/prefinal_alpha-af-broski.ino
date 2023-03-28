@@ -2,6 +2,7 @@
 #include <XPT2046_Touchscreen.h>
 #include <SPI.h>
 #include <Wire.h>
+#include <bluefruit.h>
 #include "nRF52_PWM.h"
 
 //these are the pin assignments of the first revision of the multimeter schematic PRONE TO CHANGE (probably not tho)
@@ -35,7 +36,17 @@ XPT2046_Touchscreen ts(TS_CS, TS_IRQ);
 Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
 
 const int v_off = 240; //used for menu spacing. no touchy
-const int h_off = 80; 
+const int h_off = 80;
+
+// bluetooth shit idk ask andrew
+const uint8_t UUID128_SVC_MULTIMETER[] = {0x3e, 0x83, 0x92, 0x6c, 0xa0, 0xaa, 0x42, 0x61, 0x90, 0xd4, 0xc0, 0x95, 0x85, 0xc3, 0xe7, 0x3b};
+const uint8_t UUID128_CHR_VOLTAGE[] = {0x86, 0xf8, 0x5c, 0x5b, 0x9b, 0xd8, 0x41, 0x51, 0xbf, 0x64, 0x03, 0xbf, 0x16, 0xb9, 0xfe, 0x81};
+
+BLEService        multimeter_svc = BLEService(UUID128_SVC_MULTIMETER);
+BLECharacteristic voltage_chr = BLECharacteristic(UUID128_CHR_VOLTAGE);
+
+BLEDis bledis;    // DIS (Device Information Service) helper class instance
+BLEBas blebas;    // BAS (Battery Service) helper class instance
 
 void printMenu(){
   tft.fillRect(h_off*0, v_off, h_off, h_off, ILI9341_BLUE);
@@ -75,6 +86,9 @@ void simpPrint3(char* toPrint, float toPrint2, float toPrint3){
   tft.print(toPrint2);
   tft.setCursor(0,40);
   tft.print(toPrint3);
+
+  // transmit the value over bluetooth
+  voltage_chr.notify32(toPrint2);
 }
 
 //manually calibrated touch screen edges, not 100% accurate 
@@ -224,6 +238,75 @@ void miliampMeter(){
   simpPrint3("200mA Range", read*adc2v/miliampRes*1000, read);  //ohms law, bitch part 2
 }
 
+void setupMultimeter(void)
+{
+  multimeter_svc.begin();
+
+  // Note: You must call .begin() on the BLEService before calling .begin() on
+  // any characteristic(s) within that service definition.. Calling .begin() on
+  // a BLECharacteristic will cause it to be added to the last BLEService that
+  // was 'begin()'ed!
+
+  voltage_chr.setProperties(CHR_PROPS_NOTIFY);
+  voltage_chr.setPermission(SECMODE_OPEN, SECMODE_NO_ACCESS);
+  voltage_chr.setFixedLen(4);
+  voltage_chr.setPresentationFormatDescriptor(0x14, 0, 0x2728); // Set interpretation to float32
+  voltage_chr.begin();
+  voltage_chr.write32(0); // init voltage to 0
+}
+
+void startAdv(void)
+{
+  // Advertising packet
+  Bluefruit.Advertising.addFlags(BLE_GAP_ADV_FLAGS_LE_ONLY_GENERAL_DISC_MODE);
+  Bluefruit.Advertising.addTxPower();
+
+  // Include Multimeter Service UUID
+  Bluefruit.Advertising.addService(multimeter_svc);
+
+  // Include Name
+  Bluefruit.Advertising.addName();
+  
+  /* Start Advertising
+   * - Enable auto advertising if disconnected
+   * - Interval:  fast mode = 20 ms, slow mode = 152.5 ms
+   * - Timeout for fast mode is 30 seconds
+   * - Start(timeout) with timeout = 0 will advertise forever (until connected)
+   * 
+   * For recommended advertising interval
+   * https://developer.apple.com/library/content/qa/qa1931/_index.html   
+   */
+  Bluefruit.Advertising.restartOnDisconnect(true);
+  Bluefruit.Advertising.setInterval(32, 244);    // in unit of 0.625 ms
+  Bluefruit.Advertising.setFastTimeout(30);      // number of seconds in fast mode
+  Bluefruit.Advertising.start(0);                // 0 = Don't stop advertising after n seconds  
+}
+
+void connect_callback(uint16_t conn_handle)
+{
+  // Get the reference to current connection
+  BLEConnection* connection = Bluefruit.Connection(conn_handle);
+
+  char central_name[32] = { 0 };
+  connection->getPeerName(central_name, sizeof(central_name));
+
+  // TODO later
+}
+
+/**
+ * Callback invoked when a connection is dropped
+ * @param conn_handle connection where this event happens
+ * @param reason is a BLE_HCI_STATUS_CODE which can be found in ble_hci.h
+ */
+void disconnect_callback(uint16_t conn_handle, uint8_t reason)
+{
+  (void) conn_handle;
+  (void) reason;
+
+  // TODO later
+}
+
+
 void setup() {
   analogReadResolution(12);
   pinMode(V_ADC, INPUT);
@@ -254,6 +337,24 @@ void setup() {
   printMenu();
   tft.setTextColor(ILI9341_WHITE);
   PWM_Instance = new nRF52_PWM(SPK, frequencyOff, dutyCycle);
+
+  // Initialise the Bluefruit module
+  Bluefruit.begin();
+  // Set name
+  Bluefruit.setName("Metameter");
+  // Set the connect/disconnect callback handlers
+  Bluefruit.Periph.setConnectCallback(connect_callback);
+  Bluefruit.Periph.setDisconnectCallback(disconnect_callback);
+  // Configure and Start the Device Information Service
+  bledis.setManufacturer("Metameter");
+  bledis.setModel("iPhone");
+
+  // Setup the Multimeter service using
+  // BLEService and BLECharacteristic classes
+  setupMultimeter();
+
+  // Setup the advertising packet(s)
+  startAdv();
 }
 
 
