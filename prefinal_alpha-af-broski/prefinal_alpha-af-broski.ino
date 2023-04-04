@@ -3,24 +3,27 @@
 #include <SPI.h>
 #include <Wire.h>
 #include <bluefruit.h>
+//#include <string>
 #include "nRF52_PWM.h"
 
-//these are the pin assignments of the first revision of the multimeter schematic PRONE TO CHANGE (probably not tho)
+//using std::string;
+
+//these are the pin assignments of the second revision of the multimeter schematic PRONE TO CHANGE (probably not tho)
 #define BUTTON 4 //on board button, use as necessary
 #define V_ADC A0 //voltage and ohm adc positive input
 #define COM_ADC A1 //common (negative) adc input
-#define OHM_OUT 16 //ohmeter voltage divider supply output 
+#define OHM_OUT A2 //ohmeter voltage divider supply output 
 #define mA_ADC A3 //mA adc positive input
 #define A_ADC A4 //A adc positive input
-#define TFT_CS 2 //display chip select pin, used in setup call
-#define TFT_DC  21 //display disconnect pin, used in setup call
-#define TS_CS  22 //touch screen chip select pin, used in setup call
-#define TS_IRQ 7 //touch screen interrupt pin, used in setup or standalone (default high)
-#define V_OHM_CTL 9 //V/Ohm selector, high for voltmeter
-#define UH_CTL 10 //control pin for UH range (1k)
-#define H_CTL 11 //control pin for High range (9k)
-#define M_CTL 12 //control pin for Medium range (90k)
-#define L_CTL 13 //control pin for Low range (900k) (!!Exposes ADC to raw V/ohm In!!) 
+#define TS_IRQ 2 //touch screen interrupt pin, used in setup or standalone (default high)
+#define TS_CS  21 //touch screen chip select pin, used in setup call 
+#define TFT_DC  22 //display disconnect pin, used in setup call
+#define TFT_CS 7 //display chip select pin, used in setup call
+#define L_CTL 9 //control pin for Low range (90k) (!!Exposes ADC to raw V/ohm In!!) 
+#define M_CTL 10 //control pin for Medium range (9k)
+#define H_CTL 11 //control pin for High range (1k)
+#define OHM_GND_CTL 12  //high connects in_com to gnd, used for ohmeter
+#define V_OHM_CTL 13 //V/Ohm selector, high for voltmeter
 #define SPK A5 //speaker control pin (must be driven by ~4khz pwm signal)
 
 //for speaker PWM output
@@ -38,7 +41,34 @@ Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
 const int v_off = 240; //used for menu spacing. no touchy
 const int h_off = 80;
 
-// bluetooth shit idk ask andrew
+// bluetooth shit idk ask andrew 
+
+//andrew puts spaces at the start of his comments 
+/*
+⢎⣽⣭⠿⣶⣅⣶⠴⠤⠦⠤⡄⡤⠤⣤⡤⠤⠤⠤⡄⣠⠤⠠⠤⡀⠀⠀⠀⡤⠤⠤⠤⣤⠤⠤⠤⠤⡄⢀⡤⠤⠤⢄⠀⡤⠤⠤⡄⢠⠤⠤⢤⠀⠀⠀⢀⡤⠄⠤⢄⠠⡤⠤⠤⠤⢄⢠⠤⠤⡤⠤⢤⣠⠤⢤⢀⡤⠤⠤⢄⠀⡤⠤⠤⠤⡄⣀⡤⢤⢀⠀
+⢭⣿⣍⡁⣯⣽⣯⠀⢰⢦⠀⢹⠅⠀⡽⡇⠀⡖⠐⠧⡃⠠⣶⣀⣹⠀⠀⠀⡇⠀⣆⠲⣹⠀⢰⢢⠀⢸⡎⠀⢴⠄⠈⣶⡃⠀⡀⢱⡜⠀⠀⢸⠀⠀⠀⡞⠀⣰⡄⠈⣹⠄⠀⣶⡀⠈⣾⠀⠀⡇⠀⠘⣭⠀⢸⡞⠀⡰⣄⠈⣏⡇⠀⡖⠒⠟⣯⠙⢘⡭⠗
+⢎⣷⢶⣃⣷⠼⣧⠀⢸⢼⠀⢸⡃⠀⡽⡇⠀⠉⠙⡆⠣⡀⠈⠲⡄⠀⠀⠀⡇⠀⢉⣙⣻⠀⠈⡉⠠⣜⡇⠀⢸⠃⠀⣷⡁⠀⡇⠸⠇⢸⠀⢸⠀⠀⠀⡇⠀⢎⠑⠂⢹⠀⠀⡉⠠⢴⢓⠀⢀⡇⠀⣃⢫⠀⢸⠇⠀⣽⠛⠛⣷⡃⠀⠉⠙⡏⠧⣎⣱⠦⠏
+⢎⡼⣭⢏⢧⡃⡷⠀⢸⢼⠀⢸⡅⠀⡽⡇⠀⡏⠉⢱⠒⠛⣧⠀⢸⡄⠀⠀⡇⠀⡏⢈⢸⠀⢸⣽⠀⢸⡇⠀⣼⡁⠀⣿⠆⠀⣷⠀⠀⣸⠁⢸⠀⠀⠀⡇⠀⢯⡋⠉⣿⠀⠀⣿⠀⠸⢨⠀⠀⡆⠀⢽⠈⠀⢸⡇⠀⣙⡇⠀⡷⡃⠀⡏⠉⠁⠀⠀⠀⠀⠀
+⢮⠵⣎⡟⢮⣓⡿⠀⠈⠁⣀⠞⡇⠀⣳⡇⠀⠉⠉⢿⢇⡀⠉⢀⡜⠀⠀⠀⡇⠀⡗⢂⣻⠀⢸⣿⠀⢸⣷⡀⠈⠀⣰⢉⡇⠀⣟⡄⠀⣿⠀⢸⠀⠀⠀⠱⣀⠈⠁⣠⢺⡀⠀⣿⠀⢸⠰⠀⠰⡁⠀⢸⣇⠀⢸⢰⡀⠈⢁⡀⣟⡇⠀⠉⠉⡇⠀⠀⠀⠀⠀
+⢧⢻⡼⣭⠳⣌⠯⣍⠩⣍⠱⣌⠩⠍⠁⠉⠉⠉⠉⠁⠀⠉⠉⠁⠀⠀⠀⠀⣩⣽⣿⡿⠟⠉⠉⠈⠉⠉⠈⠙⠛⢿⣿⣿⣭⡫⢟⣿⣿⣿⣿⣿⣧⠀⠀⠀⠈⠉⠉⠀⠀⠉⠉⠉⠉⠉⠈⠉⠉⠉⠉⠉⠈⠉⠉⠀⠈⠉⠁⠉⠁⠉⠉⠉⠉⠁⠀⠀⠀⠀⠀
+⣭⢳⡟⢶⣛⣬⢳⣉⠳⢬⠓⣌⠣⡁⠀⢀⠢⡐⠤⠐⠀⠀⠀⠀⠀⣈⣶⣿⣿⠟⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠻⣿⣿⣭⢿⣿⣿⣿⣿⣿⣧⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⠀⠀⠀⠀⠀⠀⢀⠠⠀⠀⡀⠆⡄⠀⠀⢀⠂⡀⠀⠀⠀⠀
+⣎⢷⣫⠷⣭⢖⣣⡜⡣⢏⣝⢢⡓⢤⢀⢂⡳⠌⡄⢣⢤⣾⠿⢷⣴⣿⣿⣿⢃⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠹⣿⣿⡽⣿⣿⣿⣿⣿⣧⢀⡀⠀⠀⠀⢀⠰⡈⢆⠄⠀⢀⠒⠤⡙⠈⠆⡍⢊⠅⠂⠄⠁⢂⠜⡌⡐⠠⠐⢂⠡⠐⠀⠀⠀⡀
+⢾⣹⣎⠿⣜⡯⢶⣍⠳⣏⢎⢧⡙⣆⠣⢎⡜⣡⡘⢆⡛⣣⣴⣿⣿⣿⣿⣿⣿⣿⣿⣶⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢻⣿⣯⢿⣿⣿⣿⣿⣿⣷⣄⠀⠀⢄⠃⡱⢊⠀⡐⢀⡉⢆⠑⡈⠠⠜⡀⠎⡡⢀⠡⢈⢢⢱⢠⠁⡌⢂⠄⡀⠀⠀⠠⠅
+⣟⡶⣯⠟⠾⠽⠧⠞⠽⠚⠮⠷⣻⣼⣻⣶⣝⣦⣝⡲⣽⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢾⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠹⣿⣷⣿⣿⣿⣿⣿⣿⣟⣶⡌⢤⠓⡔⢣⠎⠴⡡⠜⡌⢖⠡⡑⢭⡘⡱⢌⡣⡜⣂⠧⣋⠶⣙⢬⣋⠾⡡⠍⣌⠓⡬
+⣯⣟⣧⣀⣀⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡠⣤⣼⡷⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣻⡅⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢻⣿⣿⣿⣿⣿⣿⣿⣿⣾⣿⠢⡍⡜⣡⠚⢤⠣⡝⡜⡌⢆⠱⢢⢱⡘⢦⡱⣚⢔⣫⢒⡽⡘⢶⣩⠞⣥⠓⣌⡚⡔
+⣿⣾⢯⣿⣽⡾⣟⣿⣛⢶⡱⢶⡶⣶⢿⣷⣿⣿⣿⣟⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡷⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⠤⡘⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⡼⣜⡥⣛⢦⠳⡜⡧⡝⢮⣙⢧⢧⣛⠶⣹⡜⢮⢖⡯⢶⣹⢳⣎⠿⣜⡛⢶⡹⢞
+⣿⣿⣾⣽⣻⣷⠻⠉⠋⠈⠁⠈⠑⠋⠚⣿⣿⣿⣿⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⡃⠀⠀⠀⠀⠀⠀⠀⠀⡀⠄⡠⣀⢦⠱⣤⢓⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣿⣵⣯⣜⢶⡱⣃⠷⣘⡻⡼⣌⠟⣴⢫⡕⡞⣼⣱⣎⠿⣬⢛⡴⣫⠗⣎⣳⢎
+⣯⣽⣧⣯⣽⡏⠀⠀⠀⠀⠀⠀⠀⠀⠀⢻⣿⣿⣽⣻⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢠⠄⡤⣀⠒⣄⢣⡙⢦⣹⠜⠀⢘⡮⢷⣚⣯⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣾⣿⣷⣛⡾⣥⢳⣑⠎⣉⢀⢋⡈⣑⣁⣋⣈⢓⣈⢋⣘⣁⢛⣈⡙⣊
+⣿⣿⣿⣿⣿⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⣿⣿⣟⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣟⣮⣟⣶⣭⢿⣼⣳⣻⠟⣀⣠⡐⣧⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡻⣿⣿⣿⣿⣿⣿⣿⣿⣯⣿⣾⣥⣏⣮⢵⣫⣞⡵⣎⡷⢎⣏⢶⡹⣎⡳⣝⢮
+⠿⡿⢿⢿⡿⡀⠀⠀⠀⠀⠀⠀⠀⢀⡀⣀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢫⣾⣵⣳⣿⣿⣱⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠟⡁⠹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣯⣷⣿⣾⢿⣽⢾⣹⢎⡷⣽⢺⣵⣛⣮
+⠀⠀⠀⠀⠀⠁⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⣿⣿⢫⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⣋⢭⡻⢿⣿⣿⣿⣿⣿⣾⣿⣿⣿⣿⣿⣳⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣻⡝⡆⢼⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡎⠀⠉⠁⠈⠁⠈
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⣿⣿⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣿⣾⣽⣿⣿⣿⣿⡿⣿⠿⣿⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣽⡳⢌⢿⣿⣿⣿⣿⣿⡟⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡟⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠠⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣭⣟⣿⣿⣿⣿⣿⣿⣷⣟⢧⣺⣿⣿⣟⣷⣿⡷⢶⠾⣽⣿⣿⣿⣿⣿⣿⡿⠋⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⣙⢻⢻⡿⣿⣯⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢿⣻⢯⣟⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠃⠀⠀⠀⠀⠀⠀⠀⠈⠉⠉⠉⠁⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⡈⣬⢣⡟⣵⡿⣯⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⣿⣟⣯⢿⣽⣻⠿⡿⡿⣿⢿⡿⣿⠿⠿⠿⠿⠿⠿⠛⠛⠒⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⠡⢖⡴⢣⡛⣷⢻⡽⣿⣻⢿⡿⢿⠿⣿⠿⡿⢿⡟⣿⠻⡟⢯⠛⠧⠛⠜⠑⠃⠘⠈⠒⠈⠀⠉⠀⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⠀⠁⠀⠀⠁⠀⠀⠁⠀⠁⠀⠃⠈⠈⠘⠀⠁⠀⠁⠈⠀⠁⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+*/
 const uint8_t UUID128_SVC_MULTIMETER[] = {0x3e, 0x83, 0x92, 0x6c, 0xa0, 0xaa, 0x42, 0x61, 0x90, 0xd4, 0xc0, 0x95, 0x85, 0xc3, 0xe7, 0x3b};
 const uint8_t UUID128_CHR_VOLTAGE[] = {0x86, 0xf8, 0x5c, 0x5b, 0x9b, 0xd8, 0x41, 0x51, 0xbf, 0x64, 0x03, 0xbf, 0x16, 0xb9, 0xfe, 0x81};
 
@@ -77,18 +107,20 @@ void printMenu(){
   
 }
 
-void simpPrint3(char* toPrint, float toPrint2, float toPrint3){
+void simpPrint4(char* Mode, float Value, char* Units, float Read){
   tft.fillRect(0, 0, 240, v_off-h_off, ILI9341_BLACK);
   tft.setTextSize(2);
   tft.setCursor(0,0);
-  tft.print(toPrint);
+  tft.print(Mode);
   tft.setCursor(0,20);
-  tft.print(toPrint2);
+  tft.print(Value);
   tft.setCursor(0,40);
-  tft.print(toPrint3);
+  tft.print(Units);
+  tft.setCursor(0,60);
+  tft.print(Read);
 
   // transmit the value over bluetooth
-  voltage_chr.notify32(toPrint2);
+  voltage_chr.notify32(Value);
 }
 
 //manually calibrated touch screen edges, not 100% accurate 
@@ -123,18 +155,21 @@ bool touchInBoxPoint(int x, int y, int w, int h, TS_Point point){
 
 
 const float adc2v = 3.3/3745; // manually calibrated, only works for 12 bit //used for all data input functions //different for each itsybitsy?
-const int lowRangeRes = 900000; // values also used for ohmmeter //holy shit $15 buys a good resistor network
-const int medRangeRes = 90000;
-const int highRangeRes = 9000;
-const int uhRangeRes = 1000;
-const int totRes = lowRangeRes + medRangeRes + highRangeRes + uhRangeRes;
+const int lowRangeRes = 90000; // values also used for ohmmeter //holy shit $15 buys a good resistor network
+const int medRangeRes = 9000;
+const int highRangeRes = 1000;
+const int totRes = lowRangeRes + medRangeRes + highRangeRes;
 //copied from voltmeter sketch,  probably still gets fucky with negative voltages
 //could be more accurate if parallel resistance of ADC was accounted for
 //could be more accurate if multiple samples were taken and averaged
+//modified for use with 100k input impedance, may need tweaking
 void voltMeter(){
   int read = 0;
   digitalWrite(H_CTL, HIGH);
+  digitalWrite(M_CTL, LOW); //redundancy, setting defaults
+  digitalWrite(L_CTL, LOW);
   digitalWrite(V_OHM_CTL, HIGH);
+  digitalWrite(OHM_GND_CTL, LOW);
   delay(2); //required for relay switching 
   read = analogRead(V_ADC) - (analogRead(COM_ADC));
   if(abs(read) < 400){
@@ -147,80 +182,110 @@ void voltMeter(){
       digitalWrite(L_CTL, HIGH);
       delay(2); //relay switch
       read = analogRead(V_ADC) - (analogRead(COM_ADC));
-      simpPrint3("Low Range",read*adc2v*totRes/(lowRangeRes + medRangeRes + highRangeRes + uhRangeRes), read);
+      simpPrint4("Low Range",read*adc2v*totRes/(lowRangeRes + medRangeRes + highRangeRes),"Volts" , read);
       digitalWrite(L_CTL, LOW);
-      delay(2); //relay switch
+      //delay(2); //relay switch
     }
     else{
-      simpPrint3("Med Range",read*adc2v*totRes/(medRangeRes + highRangeRes + uhRangeRes), read);
+      simpPrint4("Med Range",read*adc2v*totRes/(medRangeRes + highRangeRes),"Volts" , read);
       digitalWrite(M_CTL, LOW);
-      delay(2); //relay switch
+      //delay(2); //relay switch
     }
   }
   else{
-    simpPrint3("High Range",read*adc2v*totRes/(highRangeRes + uhRangeRes), read);
+    simpPrint4("High Range",read*adc2v*totRes/(highRangeRes),"Volts" , read);
     digitalWrite(H_CTL, LOW);
     digitalWrite(V_OHM_CTL, LOW);
-    delay(2); //relay switch
+    //delay(2); //relay switch
   }    
+
+  digitalWrite(L_CTL, LOW); //resetting to defaults
+  digitalWrite(M_CTL, LOW); 
+  digitalWrite(H_CTL, LOW);
+  digitalWrite(OHM_GND_CTL, LOW);  
+  digitalWrite(V_OHM_CTL, HIGH);  //may need to change, refer to call in setup
+  digitalWrite(OHM_OUT, LOW);
+  delay(2); //relay switch
   
 }
 
 
 //used voltage divider equation solved for R2 from https://en.wikipedia.org/wiki/Voltage_divider#Resistive_divider
 //could probably add a fudge factor for series resistance of 3 relays and probes, maybe just subtract from final value?
+//modified for use with 100k input impedance, may need tweaking
 void ohmMeter(){
   int read = 0;
   digitalWrite(L_CTL, HIGH); // connect v/ohm in to adc for all of ohmeter reading
   digitalWrite(V_OHM_CTL, LOW); //disconnect bottom of r ladder from in common
+  digitalWrite(OHM_GND_CTL, HIGH); //connects in common to ground
   digitalWrite(OHM_OUT, HIGH); //ohm v source
   digitalWrite(M_CTL, LOW); //setting defaults for robustness
   digitalWrite(H_CTL, LOW);
-  digitalWrite(UH_CTL, LOW);
   delay(2); //required for relay switching 
-  read = analogRead(V_ADC) - (analogRead(COM_ADC)); //read with full resistor ladder (1M)
+  read = analogRead(V_ADC) - (analogRead(COM_ADC)); //read with full resistor ladder (100k)
   if(read < 400){
     //digitalWrite(, LOW);
-    digitalWrite(M_CTL, HIGH); //bypass 900k
+    digitalWrite(M_CTL, HIGH); //bypass 90k
     delay(2); //relay switch
-    read = analogRead(V_ADC) - (analogRead(COM_ADC)); //read with all but 900k (100k)
+    read = analogRead(V_ADC) - (analogRead(COM_ADC)); //read with  9k and 1k (10k)
     if(read < 400){
       //digitalWrite(, LOW);
-      digitalWrite(H_CTL, HIGH); //bypass 90k
+      digitalWrite(H_CTL, HIGH); //bypass 9k
       delay(2); //relay switch
-      read = analogRead(V_ADC) - (analogRead(COM_ADC)); //read with 9k and 1k (10k)
-      if(read < 400){
-        //digitalWrite(, LOW);
-        digitalWrite(UH_CTL, HIGH); //bypass 9k
-        delay(2);
-        read =  analogRead(V_ADC) - (analogRead(COM_ADC)); //read with 1k //TODO take into account relay resistance (~10 ohms each)
-        simpPrint3("1k range",((1/((3.3/(read*adc2v))-1))*(uhRangeRes)), read);
-        //digitalWrite(UH_CTL, LOW);
-        //delay(2); //relay switch
-      }
-      else{
-        simpPrint3("10k range",((1/((3.3/(read*adc2v))-1))*(uhRangeRes + highRangeRes)), read);
-        //digitalWrite(, LOW);
-        //delay(2); //relay switch
-      }
+      read = analogRead(V_ADC) - (analogRead(COM_ADC)); //read with 1k
+      simpPrint4("1k range",((1/((3.3/(read*adc2v))-1))*(highRangeRes)),"Ohms" , read);
     }
     else{
-      simpPrint3("100k range",((1/((3.3/(read*adc2v))-1))*(uhRangeRes + highRangeRes + medRangeRes)), read);
-      //digitalWrite(, LOW);
-      //delay(2); //relay switch
+      simpPrint4("10k range",((1/((3.3/(read*adc2v))-1))*(highRangeRes + medRangeRes)),"Ohms" , read);
     }
   }
   else{
-    simpPrint3("1M range",((1/((3.3/(read*adc2v))-1))*(uhRangeRes + highRangeRes + medRangeRes + lowRangeRes)), read);
+    simpPrint4("100k range",((1/((3.3/(read*adc2v))-1))*(highRangeRes + medRangeRes + lowRangeRes)),"Ohms" , read);
   }    
   
   digitalWrite(L_CTL, LOW); //refer to beginning of function 
   digitalWrite(M_CTL, LOW); //resetting to defaults
   digitalWrite(H_CTL, LOW);
-  digitalWrite(UH_CTL, LOW);  
+  digitalWrite(OHM_GND_CTL, LOW);  
   digitalWrite(V_OHM_CTL, HIGH);  //may need to change, refer to call in setup
   digitalWrite(OHM_OUT, LOW);
   delay(2); //relay switch
+}
+
+void diodeMeter(){
+  int read = 0;
+  
+  digitalWrite(V_OHM_CTL, LOW); //disconnect bottom of r ladder from in common
+  digitalWrite(OHM_GND_CTL, HIGH); //connect in common to ground
+  digitalWrite(OHM_OUT, HIGH); //connect bottom of r ladder to 3.3v source 
+  digitalWrite(L_CTL, HIGH); //const 10k output resistance
+  digitalWrite(M_CTL, HIGH); 
+  digitalWrite(H_CTL, LOW);
+  delay(2); //required for relay switching
+
+  read = analogRead(V_ADC) - (analogRead(COM_ADC));
+
+  if(abs(read) < 400){
+    simpPrint4("Probably Continuous",((1/((3.3/(read*adc2v))-1))*(highRangeRes + medRangeRes)), "Ohms", read);
+    PWM_Instance->setPWM(SPK, frequencyOn, dutyCycle);
+  }
+  else if(abs(read) < 3000){ //needs tweaking, thinking if voltage is significantly less than source, there is a conductive path or something 
+    simpPrint4("Probably a Diode",read*adc2v*totRes/(medRangeRes + highRangeRes),"Volts" , read);
+    PWM_Instance->setPWM(SPK, frequencyOff, dutyCycle);
+  }
+  else{
+    simpPrint4("Probably not a Diode",read*adc2v*totRes/(medRangeRes + highRangeRes),"Volts" , read);
+    PWM_Instance->setPWM(SPK, frequencyOff, dutyCycle);
+  }
+
+  digitalWrite(V_OHM_CTL, HIGH); //set defaults
+  digitalWrite(OHM_GND_CTL, LOW); 
+  digitalWrite(OHM_OUT, LOW);  
+  digitalWrite(L_CTL, LOW); 
+  digitalWrite(M_CTL, LOW); 
+  digitalWrite(H_CTL, LOW);
+  delay(2); //required for relay switching
+
 }
 
 
@@ -228,14 +293,14 @@ const float ampRes = 0.05;
 void ampMeter(){
   int read = 0;
   read = analogRead(A_ADC) - (analogRead(COM_ADC));
-  simpPrint3("10A Range", read*adc2v/ampRes, read);  //ohms law, bitch
+  simpPrint4("10A Range", read*adc2v/ampRes,"Amps" , read);  //ohms law, bitch
 }
 
 const int miliampRes = 5;
 void miliampMeter(){
   int read = 0;
   read = analogRead(mA_ADC) - (analogRead(COM_ADC));
-  simpPrint3("200mA Range", read*adc2v/miliampRes*1000, read);  //ohms law, bitch part 2
+  simpPrint4("200mA Range", read*adc2v/miliampRes*1000,"Amps" , read);  //ohms law, bitch part 2
 }
 
 void setupMultimeter(void)
@@ -317,14 +382,14 @@ void setup() {
 
   digitalWrite(OHM_OUT, LOW);
   digitalWrite(V_OHM_CTL, HIGH);  //best start condition to prevent damage?
-  digitalWrite(UH_CTL, LOW);
+  digitalWrite(OHM_GND_CTL, LOW);
   digitalWrite(H_CTL, LOW);
   digitalWrite(M_CTL, LOW);
   digitalWrite(L_CTL, LOW);
 
   pinMode(OHM_OUT, OUTPUT);
   pinMode(V_OHM_CTL, OUTPUT);
-  pinMode(UH_CTL, OUTPUT);
+  pinMode(OHM_GND_CTL, OUTPUT);
   pinMode(H_CTL, OUTPUT);
   pinMode(M_CTL, OUTPUT);
   pinMode(L_CTL, OUTPUT);
@@ -371,19 +436,23 @@ void loop() {  //utilizing zoomy loops to avoid using interrupts (double trigger
     }
     else if(mode == 2){
       //testing speaker
-      PWM_Instance->setPWM(SPK, frequencyOn, dutyCycle);
-      //diodeMeter(); //TODO How the fuck do diodes work
+      //PWM_Instance->setPWM(SPK, frequencyOn, dutyCycle);
+      diodeMeter(); //TODO How the fuck do diodes work
     }
     else if(mode == 3){
+      PWM_Instance->setPWM(SPK, frequencyOff, dutyCycle);
       miliampMeter(); //takes approx 0 ms, no relays
     }
     else if(mode == 4){
+      PWM_Instance->setPWM(SPK, frequencyOff, dutyCycle);
       voltMeter();  //take approx 4 to 8 ms, could possibly be improved with better relay characterization
     }
     else if(mode == 5){
+      PWM_Instance->setPWM(SPK, frequencyOff, dutyCycle);
       ohmMeter(); //takes approx 4 to 10 ms, see voltmeter call
     }
     else if(mode == 6){
+      PWM_Instance->setPWM(SPK, frequencyOff, dutyCycle);
       ampMeter(); //takes approx 0 ms, no relay switching
     }
 
