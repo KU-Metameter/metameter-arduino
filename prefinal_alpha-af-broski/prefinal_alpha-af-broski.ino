@@ -270,11 +270,13 @@ void diodeMeter(){
     PWM_Instance->setPWM(SPK, frequencyOn, dutyCycle);
   }
   else if(abs(read) < 3000){ //needs tweaking, thinking if voltage is significantly less than source, there is a conductive path or something 
-    simpPrint4("Probably a Diode",read*adc2v*totRes/(medRangeRes + highRangeRes),"Volts" , read);
+    //simpPrint4("Probably a Diode",read*adc2v*totRes/(medRangeRes + highRangeRes),"Volts" , read);
+    simpPrint4("Probably a Diode",read*adc2v,"Volts" , read);
     PWM_Instance->setPWM(SPK, frequencyOff, dutyCycle);
   }
   else{
-    simpPrint4("Probably not a Diode",read*adc2v*totRes/(medRangeRes + highRangeRes),"Volts" , read);
+    //simpPrint4("Probably not a Diode",read*adc2v*totRes/(medRangeRes + highRangeRes),"Volts" , read);
+    simpPrint4("Probably not a Diode",read*adc2v,"Volts" , read);
     PWM_Instance->setPWM(SPK, frequencyOff, dutyCycle);
   }
 
