@@ -112,11 +112,15 @@ void simpPrint4(char* Mode, float Value, char* Units, float Read){
   tft.setTextSize(2);
   tft.setCursor(0,0);
   tft.print(Mode);
-  tft.setCursor(0,20);
+  tft.setCursor(0,30);
+  tft.setTextSize(4);
   tft.print(Value);
-  tft.setCursor(0,40);
+  tft.setCursor(0,80);
+  tft.setTextSize(4);
   tft.print(Units);
-  tft.setCursor(0,60);
+  tft.setTextSize(2);
+  tft.setCursor(0,140);
+  tft.print("Raw ADC:");
   tft.print(Read);
 
   // transmit the value over bluetooth
@@ -302,7 +306,7 @@ const int miliampRes = 5;
 void miliampMeter(){
   int read = 0;
   read = analogRead(mA_ADC) - (analogRead(COM_ADC));
-  simpPrint4("200mA Range", read*adc2v/miliampRes*1000,"Amps" , read);  //ohms law, bitch part 2
+  simpPrint4("200mA Range", read*adc2v/miliampRes*1000,"Miliamps" , read);  //ohms law, bitch part 2
 }
 
 void connect_callback(uint16_t conn_handle)
