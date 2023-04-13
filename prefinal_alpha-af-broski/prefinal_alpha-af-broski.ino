@@ -76,7 +76,7 @@ BLEService        multimeter_svc = BLEService(UUID128_SVC_MULTIMETER);
 BLECharacteristic voltage_chr = BLECharacteristic(UUID128_CHR_VOLTAGE);
 
 BLEDis bledis;    // DIS (Device Information Service) helper class instance
-BLEBas blebas;    // BAS (Battery Service) helper class instance
+// BLEBas blebas;    // BAS (Battery Service) helper class instance
 
 void printMenu(){
   tft.fillRect(h_off*0, v_off, h_off, h_off, ILI9341_BLUE);
@@ -305,50 +305,6 @@ void miliampMeter(){
   simpPrint4("200mA Range", read*adc2v/miliampRes*1000,"Amps" , read);  //ohms law, bitch part 2
 }
 
-void setupMultimeter(void)
-{
-  multimeter_svc.begin();
-
-  // Note: You must call .begin() on the BLEService before calling .begin() on
-  // any characteristic(s) within that service definition.. Calling .begin() on
-  // a BLECharacteristic will cause it to be added to the last BLEService that
-  // was 'begin()'ed!
-
-  voltage_chr.setProperties(CHR_PROPS_NOTIFY);
-  voltage_chr.setPermission(SECMODE_OPEN, SECMODE_NO_ACCESS);
-  voltage_chr.setFixedLen(4);
-  voltage_chr.setPresentationFormatDescriptor(0x14, 0, 0x2728); // Set interpretation to float32
-  voltage_chr.begin();
-  voltage_chr.write32(0); // init voltage to 0
-}
-
-void startAdv(void)
-{
-  // Advertising packet
-  Bluefruit.Advertising.addFlags(BLE_GAP_ADV_FLAGS_LE_ONLY_GENERAL_DISC_MODE);
-  Bluefruit.Advertising.addTxPower();
-
-  // Include Multimeter Service UUID
-  Bluefruit.Advertising.addService(multimeter_svc);
-
-  // Include Name
-  Bluefruit.Advertising.addName();
-  
-  /* Start Advertising
-   * - Enable auto advertising if disconnected
-   * - Interval:  fast mode = 20 ms, slow mode = 152.5 ms
-   * - Timeout for fast mode is 30 seconds
-   * - Start(timeout) with timeout = 0 will advertise forever (until connected)
-   * 
-   * For recommended advertising interval
-   * https://developer.apple.com/library/content/qa/qa1931/_index.html   
-   */
-  Bluefruit.Advertising.restartOnDisconnect(true);
-  Bluefruit.Advertising.setInterval(32, 244);    // in unit of 0.625 ms
-  Bluefruit.Advertising.setFastTimeout(30);      // number of seconds in fast mode
-  Bluefruit.Advertising.start(0);                // 0 = Don't stop advertising after n seconds  
-}
-
 void connect_callback(uint16_t conn_handle)
 {
   // Get the reference to current connection
@@ -373,6 +329,63 @@ void disconnect_callback(uint16_t conn_handle, uint8_t reason)
   // TODO later
 }
 
+void setupBluetooth(void)
+{
+  // BLUEFRUIT INITIALIZATION
+  // Initialise the Bluefruit module
+  Bluefruit.begin();
+  // Set name
+  Bluefruit.setName("Metameter");
+  // Set the connect/disconnect callback handlers
+  Bluefruit.Periph.setConnectCallback(connect_callback);
+  Bluefruit.Periph.setDisconnectCallback(disconnect_callback);
+
+  // DEVICE INFORMATION SERVICE
+  // Configure and Start the Device Information Service
+  bledis.setManufacturer("Metameter");
+  bledis.setModel("Metameter");
+  bledis.begin();
+
+  // MULTIMETER SERVICE
+  // Setup the Multimeter service using
+  // BLEService and BLECharacteristic classes
+  multimeter_svc.begin();
+
+  // VOLTAGE CHARACTERISTIC
+  // Note: You must call .begin() on the BLEService before calling .begin() on
+  // any characteristic(s) within that service definition.. Calling .begin() on
+  // a BLECharacteristic will cause it to be added to the last BLEService that
+  // was 'begin()'ed!
+  // Setup voltage characteristic
+  voltage_chr.setProperties(CHR_PROPS_NOTIFY);
+  voltage_chr.setPermission(SECMODE_OPEN, SECMODE_NO_ACCESS);
+  voltage_chr.setFixedLen(4);
+  voltage_chr.setPresentationFormatDescriptor(0x14, 0, 0x2728); // Set interpretation to float32
+  voltage_chr.begin();
+  voltage_chr.write32(0); // init voltage to 0
+
+  // ADVERTISING
+  // Advertising packet
+  Bluefruit.Advertising.addFlags(BLE_GAP_ADV_FLAGS_LE_ONLY_GENERAL_DISC_MODE);
+  Bluefruit.Advertising.addTxPower();
+  // Include Multimeter Service UUID
+  Bluefruit.Advertising.addService(multimeter_svc);
+  // Include Name
+  Bluefruit.ScanResponse.addName();
+  /* Start Advertising
+   * - Enable auto advertising if disconnected
+   * - Interval:  fast mode = 20 ms, slow mode = 152.5 ms
+   * - Timeout for fast mode is 30 seconds
+   * - Start(timeout) with timeout = 0 will advertise forever (until connected)
+   * 
+   * For recommended advertising interval
+   * https://developer.apple.com/library/content/qa/qa1931/_index.html   
+   */
+  Bluefruit.Advertising.restartOnDisconnect(true);
+  Bluefruit.Advertising.setInterval(32, 244);    // in unit of 0.625 ms
+  Bluefruit.Advertising.setFastTimeout(30);      // number of seconds in fast mode
+  Bluefruit.Advertising.start(0);                // 0 = Don't stop advertising after n seconds  
+}
 
 void setup() {
   analogReadResolution(12);
@@ -405,23 +418,7 @@ void setup() {
   tft.setTextColor(ILI9341_WHITE);
   PWM_Instance = new nRF52_PWM(SPK, frequencyOff, dutyCycle);
 
-  // Initialise the Bluefruit module
-  Bluefruit.begin();
-  // Set name
-  Bluefruit.setName("Metameter");
-  // Set the connect/disconnect callback handlers
-  Bluefruit.Periph.setConnectCallback(connect_callback);
-  Bluefruit.Periph.setDisconnectCallback(disconnect_callback);
-  // Configure and Start the Device Information Service
-  bledis.setManufacturer("Metameter");
-  bledis.setModel("iPhone");
-
-  // Setup the Multimeter service using
-  // BLEService and BLECharacteristic classes
-  setupMultimeter();
-
-  // Setup the advertising packet(s)
-  startAdv();
+  setupBluetooth();
 }
 
 
