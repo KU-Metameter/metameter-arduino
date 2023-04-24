@@ -70,10 +70,26 @@ const int h_off = 80;
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⠀⠁⠀⠀⠁⠀⠀⠁⠀⠁⠀⠃⠈⠈⠘⠀⠁⠀⠁⠈⠀⠁⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 */
 const uint8_t UUID128_SVC_MULTIMETER[] = {0x3b, 0xe7, 0xc3, 0x85, 0x95, 0xc0, 0xd4, 0x90, 0x61, 0x42, 0xaa, 0xa0, 0x6c, 0x92, 0x83, 0x3e};
-const uint8_t UUID128_CHR_VOLTAGE[] = {0x81, 0xfe, 0xb9, 0x16, 0xbf, 0x03, 0x64, 0xbf, 0x51, 0x41, 0xd8, 0x9b, 0x5b, 0x5c, 0xf8, 0x86};
+const uint8_t UUID128_CHR_MEASUREMENT[] = {0x81, 0xfe, 0xb9, 0x16, 0xbf, 0x03, 0x64, 0xbf, 0x51, 0x41, 0xd8, 0x9b, 0x5b, 0x5c, 0xf8, 0x86};
+// UUID128_CHR_MODE = 225a22e1-e572-407a-8144-283dcd49303c
+const uint8_t UUID128_CHR_MODE[] = {0x3c, 0x30, 0x49, 0xcd, 0x3d, 0x28, 0x44, 0x81, 0x7a, 0x40, 0x72, 0xe5, 0xe1, 0x22, 0x5a, 0x22};
+
+enum Mode {
+  NONE,
+  BTMENU,
+  DIODE,
+  MILLIAMPS,
+  VOLTS,
+  OHMS,
+  AMPS,
+};
+
+//current mode
+Mode mode = Mode::NONE;
 
 BLEService        multimeter_svc = BLEService(UUID128_SVC_MULTIMETER);
-BLECharacteristic voltage_chr = BLECharacteristic(UUID128_CHR_VOLTAGE);
+BLECharacteristic measurement_chr = BLECharacteristic(UUID128_CHR_MEASUREMENT);
+BLECharacteristic mode_chr = BLECharacteristic(UUID128_CHR_MODE);
 
 BLEDis bledis;    // DIS (Device Information Service) helper class instance
 // BLEBas blebas;    // BAS (Battery Service) helper class instance
@@ -124,7 +140,7 @@ void simpPrint4(char* Mode, float Value, char* Units, float Read){
   tft.print(Read);
 
   // transmit the value over bluetooth
-  voltage_chr.notify32(Value);
+  measurement_chr.notify32(Value);
 }
 
 //manually calibrated touch screen edges, not 100% accurate 
@@ -355,18 +371,26 @@ void setupBluetooth(void)
   // BLEService and BLECharacteristic classes
   multimeter_svc.begin();
 
-  // VOLTAGE CHARACTERISTIC
+  // MEASUREMENT CHARACTERISTIC
   // Note: You must call .begin() on the BLEService before calling .begin() on
   // any characteristic(s) within that service definition.. Calling .begin() on
   // a BLECharacteristic will cause it to be added to the last BLEService that
   // was 'begin()'ed!
-  // Setup voltage characteristic
-  voltage_chr.setProperties(CHR_PROPS_NOTIFY);
-  voltage_chr.setPermission(SECMODE_OPEN, SECMODE_NO_ACCESS);
-  voltage_chr.setFixedLen(4);
-  voltage_chr.setPresentationFormatDescriptor(0x14, 0, 0x2728); // Set interpretation to float32
-  voltage_chr.begin();
-  voltage_chr.write32(0); // init voltage to 0
+  // Setup measurement characteristic
+  measurement_chr.setProperties(CHR_PROPS_NOTIFY);
+  measurement_chr.setPermission(SECMODE_OPEN, SECMODE_NO_ACCESS);
+  measurement_chr.setFixedLen(4);
+  measurement_chr.setPresentationFormatDescriptor(0x14, 0, 0x2728); // Set interpretation to float32
+  measurement_chr.begin();
+  measurement_chr.write32(0); // init measurement to 0
+
+  // MODE CHARACTERISTIC
+  // Used to notify the Central which mode the multimeter is in.
+  mode_chr.setProperties(CHR_PROPS_NOTIFY);
+  mode_chr.setPermission(SECMODE_OPEN, SECMODE_NO_ACCESS);
+  mode_chr.setFixedLen(1);
+  mode_chr.begin();
+  mode_chr.write8(0);
 
   // ADVERTISING
   // Advertising packet
@@ -425,36 +449,39 @@ void setup() {
   setupBluetooth();
 }
 
+void switchMode(Mode m) {
+  mode = m;
+  mode_chr.write8(mode);
+}
 
 int curTime = 0;
 int lastTime = 0;
-int mode = 0;  //current mode
 void loop() {  //utilizing zoomy loops to avoid using interrupts (double triggering, never felt responsive enough) keep everything in the main loop fast (or you die)
   curTime = millis();
   if(curTime >= lastTime + 500){  //run this section of the loop every half second 
-    if(mode == 1){
+    if(mode == Mode::BTMENU){
 
       PWM_Instance->setPWM(SPK, frequencyOff, dutyCycle);
       //BTmenu(); //TODO Yell at andrew (nicely)
     }
-    else if(mode == 2){
+    else if(mode == Mode::DIODE){
       //testing speaker
       //PWM_Instance->setPWM(SPK, frequencyOn, dutyCycle);
       diodeMeter(); //TODO How the fuck do diodes work
     }
-    else if(mode == 3){
+    else if(mode == Mode::MILLIAMPS){
       PWM_Instance->setPWM(SPK, frequencyOff, dutyCycle);
       miliampMeter(); //takes approx 0 ms, no relays
     }
-    else if(mode == 4){
+    else if(mode == Mode::VOLTS){
       PWM_Instance->setPWM(SPK, frequencyOff, dutyCycle);
       voltMeter();  //take approx 4 to 8 ms, could possibly be improved with better relay characterization
     }
-    else if(mode == 5){
+    else if(mode == Mode::OHMS){
       PWM_Instance->setPWM(SPK, frequencyOff, dutyCycle);
       ohmMeter(); //takes approx 4 to 10 ms, see voltmeter call
     }
-    else if(mode == 6){
+    else if(mode == Mode::AMPS){
       PWM_Instance->setPWM(SPK, frequencyOff, dutyCycle);
       ampMeter(); //takes approx 0 ms, no relay switching
     }
@@ -469,22 +496,22 @@ void loop() {  //utilizing zoomy loops to avoid using interrupts (double trigger
       TS_Point point = ts.getPoint();
       
       if(touchInBoxPoint(h_off*0, v_off, h_off, h_off, point)){
-        mode = 1;
+        switchMode(Mode::BTMENU);
       }
       else if(touchInBoxPoint(h_off*1, v_off, h_off, h_off, point)){
-        mode = 2;
+        switchMode(Mode::DIODE);
       }
       else if(touchInBoxPoint(h_off*2, v_off, h_off, h_off, point)){
-        mode = 3;
+        switchMode(Mode::MILLIAMPS);
       }
       else if(touchInBoxPoint(h_off*0, v_off-h_off, h_off, h_off, point)){
-        mode = 4;
+        switchMode(Mode::VOLTS);
       }
       else if(touchInBoxPoint(h_off*1, v_off-h_off, h_off, h_off, point)){
-        mode = 5;
+        switchMode(Mode::OHMS);
       }
       else if(touchInBoxPoint(h_off*2, v_off-h_off, h_off, h_off, point)){
-        mode = 6;
+        switchMode(Mode::AMPS);
       }
     //}
   }
