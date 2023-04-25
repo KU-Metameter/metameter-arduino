@@ -386,7 +386,7 @@ void setupBluetooth(void)
 
   // MODE CHARACTERISTIC
   // Used to notify the Central which mode the multimeter is in.
-  mode_chr.setProperties(CHR_PROPS_NOTIFY);
+  mode_chr.setProperties(CHR_PROPS_INDICATE);
   mode_chr.setPermission(SECMODE_OPEN, SECMODE_NO_ACCESS);
   mode_chr.setFixedLen(1);
   mode_chr.begin();
@@ -451,7 +451,7 @@ void setup() {
 
 void switchMode(Mode m) {
   mode = m;
-  mode_chr.write8(mode);
+  mode_chr.indicate8(mode);
 }
 
 int curTime = 0;
