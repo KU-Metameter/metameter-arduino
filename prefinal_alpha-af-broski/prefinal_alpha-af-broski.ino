@@ -289,7 +289,7 @@ void diodeMeter(){
     simpPrint4("Probably Continuous",((1/((3.3/(read*adc2v))-1))*(highRangeRes + medRangeRes)), "Ohms", read);
     PWM_Instance->setPWM(SPK, frequencyOn, dutyCycle);
   }
-  else if(abs(read) < 3000){ //needs tweaking, thinking if voltage is significantly less than source, there is a conductive path or something 
+  else if(abs(read) < 2000){ //needs tweaking, thinking if voltage is significantly less than source, there is a conductive path or something 
     //simpPrint4("Probably a Diode",read*adc2v*totRes/(medRangeRes + highRangeRes),"Volts" , read);
     simpPrint4("Probably a Diode",read*adc2v,"Volts" , read);
     PWM_Instance->setPWM(SPK, frequencyOff, dutyCycle);
