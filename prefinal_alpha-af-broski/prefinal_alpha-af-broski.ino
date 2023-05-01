@@ -458,6 +458,7 @@ void setup() {
   PWM_Instance = new nRF52_PWM(SPK, frequencyOff, dutyCycle);
 
   setupBluetooth();
+  switchMode(Mode::VOLTS);
 }
 
 void switchMode(Mode m) {
