@@ -123,19 +123,19 @@ void printMenu(){
   
 }
 
-void simpPrint4(char* Mode, float Value, char* Units, float Read, bool inRange){
+void simpPrint4(char* Mode, float Value, char* Units, float Read){
   tft.fillRect(0, 0, 240, v_off-h_off, ILI9341_BLACK);
   tft.setTextSize(2);
   tft.setCursor(0,0);
   tft.print(Mode);
   tft.setCursor(0,30);
-  if(inRange){
-    tft.setTextSize(4);
-    tft.print(Value);
-  }
-  else{
+  if(Value == HUGE_VALF){
     tft.setTextSize(3);
     tft.print("Out of Range");
+  }
+  else{
+    tft.setTextSize(4);
+    tft.print(Value);
   }
   tft.setCursor(0,80);
   tft.setTextSize(4);
@@ -210,18 +210,18 @@ void voltMeter(){
       digitalWrite(L_CTL, HIGH);
       delay(2); //relay switch
       read = analogRead(V_ADC) - (analogRead(COM_ADC));
-      simpPrint4("Low Range",read*adc2v*totRes/(lowRangeRes + medRangeRes + highRangeRes),"Volts" , read, 1);
+      simpPrint4("Low Range",read*adc2v*totRes/(lowRangeRes + medRangeRes + highRangeRes),"Volts" , read);
       digitalWrite(L_CTL, LOW);
       //delay(2); //relay switch
     }
     else{
-      simpPrint4("Med Range",read*adc2v*totRes/(medRangeRes + highRangeRes),"Volts" , read, 1);
+      simpPrint4("Med Range",read*adc2v*totRes/(medRangeRes + highRangeRes),"Volts" , read);
       digitalWrite(M_CTL, LOW);
       //delay(2); //relay switch
     }
   }
   else if(abs(read) < 2000){ //wrong max, 
-    simpPrint4("High Range",read*adc2v*totRes/(highRangeRes),"Volts" , read, 1);
+    simpPrint4("High Range",read*adc2v*totRes/(highRangeRes),"Volts" , read);
     digitalWrite(H_CTL, LOW);
     digitalWrite(V_OHM_CTL, LOW);
     //delay(2); //relay switch
@@ -261,17 +261,17 @@ void ohmMeter(){
       digitalWrite(H_CTL, HIGH); //bypass 9k
       delay(2); //relay switch
       read = analogRead(V_ADC) - (analogRead(COM_ADC)); //read with 1k
-      simpPrint4("1k Range",((1/((3.3/(read*adc2v))-1))*(highRangeRes)),"Ohms" , read, 1);
+      simpPrint4("1k Range",((1/((3.3/(read*adc2v))-1))*(highRangeRes)),"Ohms" , read);
     }
     else{
-      simpPrint4("10k Range",((1/((3.3/(read*adc2v))-1))*(highRangeRes + medRangeRes)),"Ohms" , read, 1);
+      simpPrint4("10k Range",((1/((3.3/(read*adc2v))-1))*(highRangeRes + medRangeRes)),"Ohms" , read);
     }
   }
   else if(read < 1900){
-    simpPrint4("100k Range",((1/((3.3/(read*adc2v))-1))*(highRangeRes + medRangeRes + lowRangeRes)),"Ohms" , read, 1);
+    simpPrint4("100k Range",((1/((3.3/(read*adc2v))-1))*(highRangeRes + medRangeRes + lowRangeRes)),"Ohms" , read);
   }
   else{
-    simpPrint4("100k Range", 0, "Ohms", read, 0);
+    simpPrint4("100k Range", HUGE_VALF, "Ohms", read);
   }     
   
   digitalWrite(L_CTL, LOW); //refer to beginning of function 
@@ -297,17 +297,17 @@ void diodeMeter(){
   read = analogRead(V_ADC) - (analogRead(COM_ADC));
 
   if(abs(read) < 400){
-    simpPrint4("Probably Continuous",((1/((3.3/(read*adc2v))-1))*(highRangeRes + medRangeRes)), "Ohms", read, 1);
+    simpPrint4("Probably Continuous",((1/((3.3/(read*adc2v))-1))*(highRangeRes + medRangeRes)), "Ohms", read);
     PWM_Instance->setPWM(SPK, frequencyOn, dutyCycle);
   }
   else if(abs(read) < 2000){ //needs tweaking, thinking if voltage is significantly less than source, there is a conductive path or something 
     //simpPrint4("Probably a Diode",read*adc2v*totRes/(medRangeRes + highRangeRes),"Volts" , read);
-    simpPrint4("Probably a Diode",read*adc2v,"Volts" , read, 1);
+    simpPrint4("Probably a Diode",read*adc2v,"Volts" , read);
     PWM_Instance->setPWM(SPK, frequencyOff, dutyCycle);
   }
   else{
     //simpPrint4("Probably not a Diode",read*adc2v*totRes/(medRangeRes + highRangeRes),"Volts" , read);
-    simpPrint4("Probably not a Diode",read*adc2v,"Volts" , read, 1);
+    simpPrint4("Probably not a Diode",read*adc2v,"Volts" , read);
     PWM_Instance->setPWM(SPK, frequencyOff, dutyCycle);
   }
 
@@ -326,14 +326,14 @@ const float ampRes = 0.05;
 void ampMeter(){
   int read = 0;
   read = analogRead(A_ADC) - (analogRead(COM_ADC));
-  simpPrint4("10A Range", read*adc2v/ampRes,"Amps" , read, 1);  //ohms law, bitch
+  simpPrint4("10A Range", read*adc2v/ampRes,"Amps" , read);  //ohms law, bitch
 }
 
 const int miliampRes = 5;
 void miliampMeter(){
   int read = 0;
   read = analogRead(mA_ADC) - (analogRead(COM_ADC));
-  simpPrint4("200mA Range", read*adc2v/miliampRes*1000,"Miliamps" , read, 1);  //ohms law, bitch part 2
+  simpPrint4("200mA Range", read*adc2v/miliampRes*1000,"Miliamps" , read);  //ohms law, bitch part 2
 }
 
 void connect_callback(uint16_t conn_handle)
