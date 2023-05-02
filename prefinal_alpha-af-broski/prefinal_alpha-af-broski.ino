@@ -360,6 +360,11 @@ void disconnect_callback(uint16_t conn_handle, uint8_t reason)
   // TODO later
 }
 
+void bt_mode_callback(uint16_t, BLECharacteristic*, uint8_t* data, uint16_t)
+{
+  mode = static_cast<Mode>(*data);
+}
+
 void setupBluetooth(void)
 {
   // BLUEFRUIT INITIALIZATION
@@ -397,9 +402,10 @@ void setupBluetooth(void)
 
   // MODE CHARACTERISTIC
   // Used to notify the Central which mode the multimeter is in.
-  mode_chr.setProperties(CHR_PROPS_INDICATE);
-  mode_chr.setPermission(SECMODE_OPEN, SECMODE_NO_ACCESS);
+  mode_chr.setProperties(CHR_PROPS_INDICATE | CHR_PROPS_WRITE);
+  mode_chr.setPermission(SECMODE_OPEN, SECMODE_OPEN);
   mode_chr.setFixedLen(1);
+  mode_chr.setWriteCallback(bt_mode_callback);
   mode_chr.begin();
   mode_chr.write8(0);
 
