@@ -73,6 +73,8 @@ const uint8_t UUID128_SVC_MULTIMETER[] = {0x3b, 0xe7, 0xc3, 0x85, 0x95, 0xc0, 0x
 const uint8_t UUID128_CHR_MEASUREMENT[] = {0x81, 0xfe, 0xb9, 0x16, 0xbf, 0x03, 0x64, 0xbf, 0x51, 0x41, 0xd8, 0x9b, 0x5b, 0x5c, 0xf8, 0x86};
 // UUID128_CHR_MODE = 225a22e1-e572-407a-8144-283dcd49303c
 const uint8_t UUID128_CHR_MODE[] = {0x3c, 0x30, 0x49, 0xcd, 0x3d, 0x28, 0x44, 0x81, 0x7a, 0x40, 0x72, 0xe5, 0xe1, 0x22, 0x5a, 0x22};
+// UUID128_CHR_CONTINUITY = 70cb22bf-ee3c-4856-b81f-fe50508b43dd
+const uint8_t UUID128_CHR_CONTINUITY[] = {0xdd, 0x43, 0x8b, 0x50, 0x50, 0xfe, 0x1f, 0xb8, 0x56, 0x48, 0x3c, 0xee, 0xbf, 0x22, 0xcb, 0x70};
 
 enum Mode {
   NONE,
@@ -87,9 +89,16 @@ enum Mode {
 //current mode
 Mode mode = Mode::NONE;
 
+enum Continuity {
+  DISCONTINUOUS,
+  CONT_DIODE,
+  CONTINUOUS,
+};
+
 BLEService        multimeter_svc = BLEService(UUID128_SVC_MULTIMETER);
 BLECharacteristic measurement_chr = BLECharacteristic(UUID128_CHR_MEASUREMENT);
 BLECharacteristic mode_chr = BLECharacteristic(UUID128_CHR_MODE);
+BLECharacteristic continuity_chr = BLECharacteristic(UUID128_CHR_CONTINUITY);
 
 BLEDis bledis;    // DIS (Device Information Service) helper class instance
 // BLEBas blebas;    // BAS (Battery Service) helper class instance
@@ -299,16 +308,19 @@ void diodeMeter(){
   if(abs(read) < 400){
     simpPrint4("Probably Continuous",((1/((3.3/(read*adc2v))-1))*(highRangeRes + medRangeRes)), "Ohms", read);
     PWM_Instance->setPWM(SPK, frequencyOn, dutyCycle);
+    continuity_chr.indicate8(Continuity::CONTINUOUS);
   }
   else if(abs(read) < 2000){ //needs tweaking, thinking if voltage is significantly less than source, there is a conductive path or something 
     //simpPrint4("Probably a Diode",read*adc2v*totRes/(medRangeRes + highRangeRes),"Volts" , read);
     simpPrint4("Probably a Diode",read*adc2v,"Volts" , read);
     PWM_Instance->setPWM(SPK, frequencyOff, dutyCycle);
+    continuity_chr.indicate8(Continuity::CONT_DIODE);
   }
   else{
     //simpPrint4("Probably not a Diode",read*adc2v*totRes/(medRangeRes + highRangeRes),"Volts" , read);
     simpPrint4("Probably not a Diode",read*adc2v,"Volts" , read);
     PWM_Instance->setPWM(SPK, frequencyOff, dutyCycle);
+    continuity_chr.indicate8(Continuity::DISCONTINUOUS);
   }
 
   digitalWrite(V_OHM_CTL, HIGH); //set defaults
@@ -408,6 +420,14 @@ void setupBluetooth(void)
   mode_chr.setWriteCallback(bt_mode_callback);
   mode_chr.begin();
   mode_chr.write8(0);
+
+  // CONTINUITY CHARACTERISTIC
+  // Used in Diode mode to distinguish between continuity, discontinuity, and diode
+  continuity_chr.setProperties(CHR_PROPS_INDICATE);
+  continuity_chr.setPermission(SECMODE_OPEN, SECMODE_NO_ACCESS);
+  continuity_chr.setFixedLen(1);
+  continuity_chr.begin();
+  continuity_chr.write8(0);
 
   // ADVERTISING
   // Advertising packet
